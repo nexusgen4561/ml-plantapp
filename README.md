@@ -84,35 +84,3 @@ flask run
 ```
 
 Default listens on http://0.0.0.0:5000
-
-## 3. Environment Variables
-
-- MODEL_PATH (optional): override model path. Default: model/best_model_cnn.pth
-- MODEL_ARCH (optional): force architecture: resnet18 | resnet50. Auto-detected if unset.
-
-Example:
-
-```bash
-export MODEL_ARCH=resnet18
-export MODEL_PATH=/absolute/path/to/your_model.pth
-python api/app.py
-```
-
-## 4. Upload Flow (ESP / Orange Pi)
-
-Device sends raw JPEG bytes via HTTP POST to `/upload`.
-
-Minimal firmware-side request (raw body is JPEG):
-
-```
-POST /upload HTTP/1.1
-Content-Type: image/jpeg
-Content-Length: ...
-<jpeg bytes>
-```
-
-Test locally with curl:
-
-```bash
-curl -X POST --data-binary @frame.jpg http://localhost:5000/upload
-```
