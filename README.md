@@ -1,33 +1,3 @@
-# resnet-app — setup
-
-Quick setup so VS Code/Pylance can resolve imports and you can run the app.
-
-1) Create and activate a virtual environment (macOS zsh):
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-2) Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3) In VS Code: select the virtual environment's Python interpreter (`.venv/bin/python`) so Pylance can resolve packages. Restart the window if needed.
-
-4) Run the app locally:
-
-```bash
-export FLASK_APP=app.py
-flask run
-```
-
-Notes:
-- If you still see unresolved import diagnostics in VS Code, ensure the selected interpreter is the `.venv` above and run `pip install -r requirements.txt` in that environment.
-- I removed an unused `numpy` import and replaced an unused `ret` variable in `app.py` to remove lint warnings.
-
 # Plant Monitoring / ResNet Inference App
 
 Workspace layout:
