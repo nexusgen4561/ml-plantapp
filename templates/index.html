@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Plant Monitor</title>
+    <style>
+      :root{
+        --bg1:#f1faf4; --bg2:#e3f2ff; --bg3:#f7fbe9;
+        --card:#ffffff; --muted:#6b7280; --accent:#2b6cb0;
+        --ring:#dbeafe; --border:#e5e7eb;
+        --text:#0f172a;
+      }
+      html,body{
+        height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Helvetica,Arial,sans-serif;
+        background:
+          radial-gradient(circle at 15% 20%, var(--bg1) 0%, transparent 55%),
+          radial-gradient(circle at 85% 30%, var(--bg2) 0%, transparent 60%),
+          radial-gradient(circle at 50% 80%, var(--bg3) 0%, transparent 55%),
+          linear-gradient(135deg,#eef5f2 0%, #f2f7fc 100%);
+        color:var(--text);
+        position:relative;
+        -webkit-font-smoothing:antialiased;
+      }
+      body::before{
+        content:"";position:fixed;inset:0;pointer-events:none;
+        background:
+          repeating-linear-gradient(0deg,rgba(0,0,0,0.015) 0 2px,transparent 2px 4px),
+          repeating-linear-gradient(90deg,rgba(0,0,0,0.012) 0 2px,transparent 2px 4px);
+        mix-blend-mode:overlay;opacity:.55;
+      }
+      body::after{
+        content:"";position:fixed;inset:0;pointer-events:none;
+        background:
+          linear-gradient(90deg,rgba(43,108,176,0.04) 1px,transparent 1px),
+          linear-gradient(180deg,rgba(43,108,176,0.04) 1px,transparent 1px);
+        background-size:48px 48px;opacity:.45;mix-blend-mode:overlay;
+      }
+      header{
+        position:sticky;top:0;z-index:10;padding:14px 28px;
+        display:flex;align-items:center;justify-content:space-between;
+        background:rgba(255,255,255,0.85);backdrop-filter:saturate(140%) blur(8px);
+        border-bottom:1px solid var(--border);
+      }
+      .header-left{display:flex;align-items:center;gap:14px}
+      .brand{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;
+        background:linear-gradient(135deg,#22c55e 0%, #16a34a 50%, #15803d 100%);color:#fff;font-weight:600;font-size:14px;letter-spacing:.5px;
+        box-shadow:0 4px 10px rgba(22,163,74,0.35);}
+      header h1{margin:0;font-weight:700;font-size:18px;letter-spacing:.3px}
+      .header-right{display:flex;align-items:center;gap:16px;font-size:12px}
+      .pill{padding:6px 10px;border-radius:999px;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;gap:6px;font-weight:500}
+      .pill span{font-weight:600;color:#2563eb}
+      .mode-toggle{cursor:pointer;padding:6px 12px;border-radius:999px;background:#e2e8f0;border:1px solid #cbd5e1;font-size:12px;font-weight:500}
+      main{display:grid;grid-template-columns:1fr 360px;gap:18px;padding:18px;max-width:1200px;margin:12px auto}
+      .left{display:grid;gap:18px}
+      .card{background:var(--card);border-radius:16px;padding:20px;border:1px solid rgba(15,23,42,0.06);
+        box-shadow:0 8px 24px rgba(2,6,23,0.06);transition:transform .2s ease, box-shadow .2s ease;position:relative;overflow:hidden}
+      .card::before{content:"";position:absolute;inset:0;background:linear-gradient(145deg,rgba(43,108,176,0.06),transparent 60%);opacity:.6;pointer-events:none}
+      .card:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(2,6,23,0.12)}
+      .card h2{margin:0 0 12px 0;font-size:13px;letter-spacing:.5px;font-weight:600;text-transform:uppercase;color:var(--text)}
+      .camera img{width:100%;height:420px;border-radius:12px;background:#0b1020;object-fit:cover;display:block}
+      .plant-name{font-size:19px;font-weight:700;margin-bottom:4px}
+      .confidence{font-size:12px;color:#64748b}
+      .conf-bar{margin-top:8px;height:8px;background:#eef2ff;border-radius:999px;overflow:hidden;border:1px solid var(--ring)}
+      .conf-fill{height:100%;width:0;background:linear-gradient(90deg,#2563eb,#22c55e);transition:width .5s cubic-bezier(.4,.0,.2,1)}
+      .sensors ul{list-style:none;padding:0;margin:6px 0 0 0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .sensors li{background:linear-gradient(180deg,#fbfdff,#f2f6fb);padding:12px;border-radius:12px;font-size:13px;color:var(--muted);
+        display:flex;flex-direction:column;border:1px solid var(--border)}
+      .label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;font-weight:500;letter-spacing:.4px}
+      .sicon{font-size:14px}
+      .value{font-weight:700;font-size:16px;margin-top:6px;color:#0f172a}
+      .status{padding:10px;border-radius:999px;font-weight:700;text-align:center;border:1px solid var(--border)}
+      .healthy{background:linear-gradient(180deg,#ecfdf5,#dcfce7);color:#065f46}
+      .unhealthy{background:linear-gradient(180deg,#fff1f2,#ffe4e6);color:#9f1239}
+      .recs ul{margin:8px 0 0 0;padding-left:18px;line-height:1.6}
+      .recs li{margin-bottom:8px}
+      .soil #soilAnalysis{padding:8px 0;line-height:1.6}
+      aside{display:flex;flex-direction:column;gap:18px}
+      .hardware-status-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .hardware-status-list li{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:10px;font-size:12px;display:flex;flex-direction:column}
+      .hw-label{color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase;font-size:10px}
+      .hw-value{margin-top:4px;font-weight:700}
+      .hw-online{color:#065f46}.hw-offline{color:#9f1239}.hw-degraded{color:#b45309}
+      @media (max-width:900px){
+        main{grid-template-columns:1fr;padding:12px}
+        .camera img{height:260px}
+        header{flex-direction:column;align-items:flex-start;gap:8px}
+        .header-right{flex-wrap:wrap}
+      }
+      /* Dark mode overrides */
+      body.dark{
+        --card:#1e293b; --muted:#94a3b8; --accent:#22c55e;
+        --ring:#334155; --border:#283548; --text:#f1f5f9;
+        background:
+          radial-gradient(circle at 25% 25%, #1e293b 0%, #0f172a 60%),
+          linear-gradient(135deg,#132032,#0f172a);
+        color:var(--text);
+      }
+      body.dark header{background:rgba(30,41,59,0.85);border-color:#334155}
+      body.dark .brand{box-shadow:0 4px 10px rgba(34,197,94,0.35)}
+      body.dark .card{background:linear-gradient(165deg,#1e293b,#152233);border:1px solid #223040}
+      body.dark .card::before{background:linear-gradient(145deg,rgba(34,197,94,0.10),transparent 60%)}
+      body.dark .pill{background:#1e293b;border-color:#334155;color:var(--text)}
+      body.dark .mode-toggle{background:#1e293b;border-color:#334155;color:var(--text)}
+      body.dark .confidence{color:#94a3b8}
+      body.dark .sensors li{background:linear-gradient(180deg,#1e293b,#162335);border-color:#223040;color:#94a3b8}
+      body.dark .label{color:#94a3b8}
+      body.dark .value{color:#f1f5f9}
+      body.dark .conf-bar{background:#1e293b;border-color:#223040}
+      body.dark .status{border-color:#223040}
+      body.dark .healthy{background:#052e1a;color:#22c55e}
+      body.dark .unhealthy{background:#3d0d14;color:#f87171}
+      body.dark .hardware-status-list li{background:#1e293b;border-color:#223040}
+      body.dark .hw-label{color:#94a3b8}
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-left">
+        <div class="brand">PM</div>
+        <h1>Plant Monitoring App - Live</h1>
+      </div>
+      <div class="header-right">
+        <button class="mode-toggle" id="modeToggle" type="button">Dark mode</button>
+        <div class="pill">Status <span id="hwSummary">OK</span></div>
+        <select id="cameraSourceSelect" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12px">
+          <option value="">Loading cameras...</option>
+        </select>
+      </div>
+    </header>
+
+    <main>
+      <section class="left">
+        <div class="card camera">
+          <h2>Uploaded Image</h2>
+          <img id="cameraFeed" src="/image" alt="Latest uploaded image" style="max-width:100%;border:2px solid #ccc;border-radius:10px;" />
+        </div>
+        <div class="card plant">
+          <h2>Plant Identification</h2>
+          <div class="plant-name" id="plantName">—</div>
+          <div class="confidence" id="plantConfidence">Confidence: —</div>
+          <div class="conf-bar"><div class="conf-fill" id="confBarFill" style="width:0%"></div></div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="card sensors">
+          <h2>Sensor Data</h2>
+          <ul id="sensorList">
+            <li><span class="label"><span class="sicon">⚗️</span> pH Level</span><span class="value" id="phVal">—</span></li>
+            <li><span class="label"><span class="sicon">💧</span> Soil Moisture</span><span class="value" id="moistureVal">—</span></li>
+          </ul>
+        </div>
+        <div class="card health">
+          <h2>Health</h2>
+          <div id="healthStatus" class="status">—</div>
+        </div>
+        <div class="card soil">
+          <h2>Soil Analysis</h2>
+          <div id="soilAnalysis">—</div>
+        </div>
+        <div class="card recs">
+          <h2>Recommendations</h2>
+          <div id="recommendations"><em>No recommendations yet.</em></div>
+        </div>
+        <div class="card hardware">
+          <h2>Hardware Status</h2>
+          <ul class="hardware-status-list" id="hardwareList">
+            <li><span class="hw-label">Webcam</span><span class="hw-value" id="hwWebcam">—</span></li>
+            <li><span class="hw-label">ESP32</span><span class="hw-value" id="hwEsp32">—</span></li>
+            <li><span class="hw-label">Orange Pi</span><span class="hw-value" id="hwOrangePi">—</span></li>
+            <li><span class="hw-label">Sensors</span><span class="hw-value" id="hwSensors">—</span></li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+
+    <script>
+      // Simple poll to bust cache and refresh /image every 2s
+      function refreshUploaded(){
+        const el=document.getElementById('cameraFeed');
+        if(!el) return;
+        el.src='/image?t='+Date.now();
+      }
+      setInterval(refreshUploaded, 2000);
+
+      const SENSORS_URL='/api/sensors';
+      const PLANT_URL='/api/plant';
+      const PLACEHOLDERS_URL='/api/placeholders';
+      const HARDWARE_URL='/api/hardware';
+      const CAMERA_EL=document.getElementById('cameraFeed');
+      let placeholders=[],placeholderIndex=0,placeholderTimer=null;
+
+      function setText(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;}
+      function inferSpeciesFromUrl(url){
+        try{
+          const u=new URL(url,window.location.origin);
+            const parts=u.pathname.split('/').filter(Boolean);
+            const i=parts.indexOf('images');
+            if(i!==-1&&parts.length>i+1) return parts[i+1];
+            const filename=parts[parts.length-1]||'';
+            for(const c of ['basil','coriander','lettuce']) if(filename.toLowerCase().includes(c)) return c;
+        }catch(e){}
+        return null;
+      }
+      function setConfidenceBar(pct){
+        const el=document.getElementById('confBarFill');if(!el)return;
+        const c=Math.max(0,Math.min(100,Number(pct)||0));el.style.width=c+'%';
+      }
+      function setConfidenceTextAndBar(v){
+        const pct=v<=1?Math.round((v||0)*100):Math.round(v||0);
+        setText('plantConfidence',`Confidence: ${pct}%`);setConfidenceBar(pct);
+      }
+      function setIdentificationFromPlaceholder(url){
+        const base=(url||'').split('?')[0];
+        const species=inferSpeciesFromUrl(base)||'unknown';
+        const name=species==='unknown'?'Unknown':species[0].toUpperCase()+species.slice(1);
+        setText('plantName',name);
+        const confPct=Math.round((Math.random()*13+85));
+        setConfidenceTextAndBar(confPct);
+        const h=document.getElementById('healthStatus');
+        h.textContent='Healthy';h.className='status healthy';
+        const recsEl=document.getElementById('recommendations');
+        recsEl.innerHTML='<ul><li>Placeholder match — verify with a live photo.</li></ul>';
+      }
+      async function loadPlaceholders(){
+        try{
+          const r=await fetch(PLACEHOLDERS_URL,{cache:'no-store'});
+          if(!r.ok)return;
+          const j=await r.json();
+          placeholders=Object.values(j).flat();
+        }catch(e){}
+      }
+      function startPlaceholderCycle(){
+        if(!placeholders.length||placeholderTimer)return;
+        const url=placeholders[placeholderIndex%placeholders.length]+'?t='+Date.now();
+        CAMERA_EL.src=url;setIdentificationFromPlaceholder(url);placeholderIndex++;
+        placeholderTimer=setInterval(()=>{
+          const u=placeholders[placeholderIndex%placeholders.length]+'?t='+Date.now();
+          CAMERA_EL.src=u;setIdentificationFromPlaceholder(u);placeholderIndex++;
+        },3000);
+      }
+      function stopPlaceholderCycle(){
+        if(placeholderTimer){clearInterval(placeholderTimer);placeholderTimer=null;}
+      }
+      CAMERA_EL.onerror=function(){startPlaceholderCycle();};
+      CAMERA_EL.onload=function(){
+        const curr=CAMERA_EL.src||'';
+        if(curr.includes('/static/images/')){setIdentificationFromPlaceholder(curr);return;}
+      };
+      async function fetchSensors(){
+        try{
+          const r=await fetch(SENSORS_URL,{cache:'no-store'});if(!r.ok)throw 0;
+          const j=await r.json();
+          setText('phVal',j.ph??'—');setText('moistureVal',j.moisture??'—');
+          let soil=[];if(j.ph!==undefined){if(j.ph<5.5)soil.push('Acidic');else if(j.ph>7.5)soil.push('Alkaline');else soil.push('PH ok');}
+          if(j.moisture!==undefined){if(j.moisture<30)soil.push('Dry');else if(j.moisture>80)soil.push('Wet');else soil.push('Moisture ok');}
+          setText('soilAnalysis',soil.join(' · ')||'—');
+        }catch(e){}
+      }
+      async function fetchPlant(){
+        try{
+          const r=await fetch(PLANT_URL,{cache:'no-store'});if(!r.ok)throw 0;
+          const j=await r.json();
+          const name=j.name??j.plant??'Unknown';setText('plantName',name);
+          if(j.confidence!==undefined)setConfidenceTextAndBar(j.confidence);else setConfidenceTextAndBar(0);
+          const health=j.health??(j.confidence&&j.confidence>0.7?'Healthy':'Uncertain');
+          const h=document.getElementById('healthStatus');h.textContent=health;
+          h.className='status '+(health.toLowerCase().includes('healthy')?'healthy':'unhealthy');
+          const recsEl=document.getElementById('recommendations');
+          if(j.recommendations){
+            if(Array.isArray(j.recommendations))recsEl.innerHTML='<ul>'+j.recommendations.map(r=>`<li>${r}</li>`).join('')+'</ul>';
+            else recsEl.textContent=j.recommendations;
+          }else recsEl.innerHTML='<em>No recommendations.</em>';
+        }catch(e){}
+      }
+      function setHardwareStatus(id,val){
+        const el=document.getElementById(id);if(!el)return;
+        el.textContent=val;el.classList.remove('hw-online','hw-offline','hw-degraded');
+        if(val==='online')el.classList.add('hw-online');else if(val==='offline')el.classList.add('hw-offline');else el.classList.add('hw-degraded');
+      }
+      async function fetchHardware(){
+        try{
+          const r=await fetch(HARDWARE_URL,{cache:'no-store'});if(!r.ok)return;
+          const j=await r.json();
+          setHardwareStatus('hwWebcam',j.webcam||'online');
+          setHardwareStatus('hwEsp32',j.esp32||'online');
+          setHardwareStatus('hwOrangePi',j.orange_pi||'online');
+          setHardwareStatus('hwSensors',j.sensors||'online');
+        }catch(e){}
+      }
+      function refreshCamera(){
+        if(placeholderTimer)return;
+        const src=CAMERA_EL.getAttribute('data-src')||CAMERA_EL.src||'/video_feed';
+        CAMERA_EL.src=src.split('?')[0]+'?t='+Date.now();
+      }
+      function scheduleCameraFallback(ms=1200){
+        setTimeout(()=>{
+          if((!CAMERA_EL.naturalWidth||CAMERA_EL.naturalWidth===0)&&placeholders.length){
+            startPlaceholderCycle();
+          }
+        },ms);
+      }
+      // Dark mode toggle
+      const modeBtn=document.getElementById('modeToggle');
+      modeBtn.onclick=function(){
+        document.body.classList.toggle('dark');
+        modeBtn.textContent=document.body.classList.contains('dark')?'Light mode':'Dark mode';
+      };
+
+      async function fetchCameraSources(){
+        try{
+          const r=await fetch('/api/camera/sources');
+          if(!r.ok) return;
+          const j=await r.json();
+          const sel=document.getElementById('cameraSourceSelect');
+          sel.innerHTML='';
+          if(!j.details || !j.details.length){
+            sel.innerHTML='<option value="">No cameras</option>';
+            return;
+          }
+          j.details.filter(d=>d.ok).forEach(d=>{
+            const opt=document.createElement('option');
+            opt.value=d.index;
+            opt.dataset.backend=d.backend||'any';
+            opt.textContent=`Camera ${d.index} (${d.backend||'any'}${d.busy?' • in-use':''})`;
+            sel.appendChild(opt);
+          });
+          if(j.current!==undefined && sel.querySelector(`option[value="${j.current}"]`)){
+            sel.value=String(j.current);
+          }
+        }catch(e){}
+      }
+
+      async function selectCamera(index){
+        if(index===undefined||index==='') return;
+        const sel=document.getElementById('cameraSourceSelect');
+        const opt=sel.selectedOptions[0];
+        const backend=(opt && opt.dataset.backend)||'avfoundation';
+        try{
+          const r=await fetch('/api/camera/select', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({index:Number(index), backend})
+          });
+          if(!r.ok) return;
+          stopPlaceholderCycle();
+          placeholderTimer=null;
+          CAMERA_EL.src='/video_feed?t='+Date.now();
+        }catch(e){}
+      }
+
+      document.getElementById('cameraSourceSelect').addEventListener('change',e=>{
+        selectCamera(e.target.value);
+      });
+
+      (async function init(){
+        CAMERA_EL.setAttribute('data-src',CAMERA_EL.src||'/video_feed');
+        await loadPlaceholders();
+        fetchSensors();fetchPlant();fetchHardware();refreshCamera();
+        scheduleCameraFallback(1200);
+        setInterval(fetchSensors,4000);
+        setInterval(fetchPlant,5000);
+        setInterval(refreshCamera,3000);
+        setInterval(fetchHardware,5000);
+        await fetchCameraSources();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,118 @@
+# resnet-app — setup
+
+Quick setup so VS Code/Pylance can resolve imports and you can run the app.
+
+1) Create and activate a virtual environment (macOS zsh):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2) Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3) In VS Code: select the virtual environment's Python interpreter (`.venv/bin/python`) so Pylance can resolve packages. Restart the window if needed.
+
+4) Run the app locally:
+
+```bash
+export FLASK_APP=app.py
+flask run
+```
+
+Notes:
+- If you still see unresolved import diagnostics in VS Code, ensure the selected interpreter is the `.venv` above and run `pip install -r requirements.txt` in that environment.
+- I removed an unused `numpy` import and replaced an unused `ret` variable in `app.py` to remove lint warnings.
+
+# Plant Monitoring / ResNet Inference App
+
+Workspace layout:
+
+```
+api/app.py              Flask application (serves HTML + inference + upload)
+templates/index.html    Front-end (auto refreshes /image every 2s)
+static/images/          Stored last uploaded frame (capture.jpg) + sample folders
+model/best_model_cnn.pth  Model checkpoint (TorchScript or state_dict)
+vercel.json             Vercel routing config
+requirements.txt        Base web dependencies (ML libs not listed)
+```
+
+Main application: [api/app.py](api/app.py)  
+Front-end template: [templates/index.html](templates/index.html)  
+Model file: [model/best_model_cnn.pth](model/best_model_cnn.pth)
+
+## 1. Environment Setup
+
+Create virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install web deps:
+
+```bash
+pip install -r requirements.txt
+```
+
+Install ML deps (not in requirements.txt to keep deployments lighter; needed locally):
+
+```bash
+pip install torch torchvision pillow opencv-python
+```
+
+(If Apple Silicon, you may need specific torch wheels.)
+
+## 2. Running Locally
+
+Option A (direct):
+
+```bash
+python api/app.py
+```
+
+Option B (Flask runner):
+
+```bash
+export FLASK_APP=api/app.py
+flask run
+```
+
+Default listens on http://0.0.0.0:5000
+
+## 3. Environment Variables
+
+- MODEL_PATH (optional): override model path. Default: model/best_model_cnn.pth
+- MODEL_ARCH (optional): force architecture: resnet18 | resnet50. Auto-detected if unset.
+
+Example:
+
+```bash
+export MODEL_ARCH=resnet18
+export MODEL_PATH=/absolute/path/to/your_model.pth
+python api/app.py
+```
+
+## 4. Upload Flow (ESP / Orange Pi)
+
+Device sends raw JPEG bytes via HTTP POST to `/upload`.
+
+Minimal firmware-side request (raw body is JPEG):
+
+```
+POST /upload HTTP/1.1
+Content-Type: image/jpeg
+Content-Length: ...
+<jpeg bytes>
+```
+
+Test locally with curl:
+
+```bash
+curl -X POST --data-binary @frame.jpg http://localhost:5000/upload
+```
