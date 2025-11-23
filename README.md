@@ -52,5 +52,3 @@ Option B (Flask runner):
 export FLASK_APP=api/app.py
 flask run
 ```
-
-Default listens on http://0.0.0.0:5000
